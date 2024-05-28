@@ -1,0 +1,234 @@
+---
+title: "Proyecto Avance 1-Simulacion"
+output: html_notebook
+---
+
+```{r}
+library(readxl)
+library(tidyverse)
+```
+
+
+Proyecto Grupal N°1 (P1) 
+
+
+Imagen Mermelada de Cocona
+
+Principales Estrategias 2025-2035:
+
+•	Incrementar la participación del mercado en un 40%
+•	Incrementar la utilidad después de impuestos en un 45%
+•	Ser reconocidos como una empresa innovadora en el sector
+
+SE PROPONEN 2 SOLUCIONES FACTIBLES PARA LAS ALTAS MERMAS QUE ASCIENDEN AL 8% DEL COSTO PROD.+OTROS
+
+CASO 1.
+
+1.- Sistema de Tapado Automático de Mermelada: 
+
+```{r}
+DF1 <- read_excel("DatosEPR1 2024-1.xlsx",sheet = "Data Sistema Tapado")
+```
+
+```{r}
+#Costos.
+maquina<-500000 #costo de la maquina
+instalacionV<-gen_unif(80000,85000) #Servicio de instalacion y validacion(incluye capacitacion)
+mantenimientoE<-0 #ESTIMAR CON DATOS DEL EXCEL
+partes_reemplazar<-25000 #fijos y cada 18 meses
+limpieza<-0 #ESTIMAR CON DATOS DEL EXCEL
+software<-25000 #fijos y cada 2 años
+
+#Beneficios Adicionales. ESTIMAR CON DATOS DEL EXCEL
+#Se puede vender la maquina basado en :
+#CASOS DE VENTAS SIMILARES   35%
+#VALOR EN LIBROS             40%
+#PERITOS CERTIFCADOS         25%
+#NO SE REQUIEREN REPROCESOS.
+```
+
+```{r}
+Mantenimiento<-rnorm(1,7515.0150,378.3456)+rnorm(1,7588.8322,381.5869)+
+  rnorm(1,7435.5782,332.3644)+rnorm(1,7413.813	,387.360)
+```
+
+```{r}
+limpieza<-runif(1,28.37638	,41.66395	)
+```
+
+```{r}
+Venta_maquina<-sample(x = c(rnorm(1,127716.44	,20785.23	),runif(1,123081.7,214295.6),rnorm(1,203886.33	,20695.67)),size = 1,prob = c(0.35,0.4,0.25))
+Venta_maquina
+```
+
+Habiendo calculado todo Procedemos a calcular la utilidad.
+
+
+```{r}
+#Costos.
+maquina<-500000 #costo de la maquina
+
+costos<-function(){
+  instalacionV<-gen_unif(1,80000,85000) #Servicio de instalacion y validacion(incluye capacitacion)
+  Mantenimiento<-rnorm(1,7515.0150,378.3456)+rnorm(1,7588.8322,381.5869)+
+  rnorm(1,7435.5782,332.3644)+rnorm(1,7413.813	,387.360)
+  limpieza<-runif(365,28.37638	,41.66395	)
+  
+}
+
+partes_reemplazar<-25000 #fijos y cada 18 meses
+limpieza<-0 #ESTIMAR CON DATOS DEL EXCEL
+software<-25000 #fijos y cada 2 años
+
+#Beneficios Adicionales. ESTIMAR CON DATOS DEL EXCEL
+#Se puede vender la maquina basado en :
+#CASOS DE VENTAS SIMILARES   35%
+#VALOR EN LIBROS             40%
+#PERITOS CERTIFCADOS         25%
+#NO SE REQUIEREN REPROCESOS.
+```
+
+
+CASO 2.
+
+2.- Tapado Manual con aplicación de elementos poka-yoke: 
+
+OPERACION MANUAL->COMPRAR 2 ELEMENTOS
+
+EN CADA CAMBIO SE COMPRA UN ELEMENTO SIN ALTERAR EL COSTO.
+EL COSTO DE ESTE ELEMENTO DEBE CAMBIAR CADA 6 MESES -> VIENE DE ALEMANIA.
+VARIACION DEL COSTO DE TRANSPORTE INTERNACIONAL-> DATA HISTORICA DE INCOTERM DDP(DELIVERED DUTY PAID) PROVISTA POR EL PROVEEDOR.
+
+```{r}
+DF2<- read_excel("DatosEPR1 2024-1.xlsx", 
+    sheet = "Data Elemento Poka-Yoke")
+```
+
+```{r}
+Transporte<-completo(DF2$Precio_transporte)
+COperarioB<-completo(DF2$`Con Bono`)
+COperarioSB<-completo(DF2$`Sin Bono`)
+Seguro<-completo(DF2$`Costo Reproceso`)
+```
+
+COSTO DE TRANSPORTE DEL CAMBIO
+
+```{r}
+hist(Transporte)
+boxplot(Transporte)
+```
+
+No hay outlayers y posiblemente sea una Normal.
+
+```{r}
+plot(Transporte)
+plot(Transporte,type = "l")
+acf(Transporte)
+```
+
+```{r}
+descdist(Transporte)
+```
+Posiblemente se trate de una normal
+
+```{r}
+fitdist(Transporte,"norm")
+```
+
+```{r}
+GB_T<-gofstat(fitdist(M_1,"norm"))
+GB_T$chisqpvalue
+GB_T$kstest
+ks.test(Transporte,pnorm,20231.456		,2467.986	)
+```
+Chi2 y KS aceptan la hipotesis nula.
+
+```{r}
+plot(fitdist(M_1,"norm"))
+```
+
+Segun la prueba de bondad y los PP y QQ Plot se acepta que la distribucion es normal.
+
+Transporte ~ norm(20231.456		,2467.986)
+
+```{r}
+Transporte<-rnorm(1,20231.456		,2467.986)
+```
+
+
+
+AL DESGASTARSE NO PUEDE TOMAR SU FORMA ORIGINAL
+NO REQUIERE COSTOS DE CAPACITACION POR QUE LA OP NO ES COMPLICADA.
+
+COSTO PROMEDIO DE 1 OPERARIO:
+
+BONO DE PRODUCTIVIDAD -> 70% DE ALCANZARSE, EXISTE DATA HISTORICA BASA DE EN ACTIVIDAD SIMILAR EN LA EMPRESA (INCLUYE HORAS EXTRAS DEPENDIENDO DEL MES) 
+
+SE REQUIEREN POR LO MENOS 3 PERSONAS (1 POR TURNO)
+
+ADICIONALMENTE SEGURO DE 200 MENSUALES POR LESIONES X TRABAJADOR
+
+INVERTIR EN COSTO DE REPROCESO PORQUE ESTUDIOS DE GAGE R&R INDICAN ERROR ENTRE OPERARIOS.
+PARA ESTIMAR SE CUENTA CON DATA HISTORICA DE FRUCTUS 
+
+
+Considerando la información presentada
+evaluación de proyectos de 5 años 
+un Costo Ponderado de Capital del 15% anual
+se le pide definir cuál de los 2 proyectos debe ser implementado SOLO SE PUEDE FINANCIAR UNO
+
+
+
+BENEFICIOS:
+
+Para el cálculo de beneficios relevantes operativos considere la información de costos de producción proyectados: 
+
+PRIMER AÑO ~  
+gen_triangular( 3,699,850 3,027,150 3,223,487 )
+SEGUNDO AÑO ~ gen_triangular( 4,178,405 3,418,695 3,836,359 )
+TERCER AÑO ~ gen_triangular(4,641,771 3,797,812 3,836,359 )
+4TO AÑO ~ gen_triangular( 5,196,441 4,251,633 4,673,299 )
+5TO AÑO ~ gen_triangular(5,570,937 4,558,040 5,039,321 )
+
+```{r}
+
+```
+
+
+Para ello, realice un resumen ejecutivo tomando en cuenta los siguientes puntos:
+
+
+
+BENEFICIOS GENERALES.
+```{r}
+Auno<-gen_triangular(1,3699850,3027150,3223487)
+Ados<-gen_triangular(1,4178405,3418695,3836359)
+Atres<-gen_triangular(1,4641771,3797812,3836359)
+Acuatro<-gen_triangular(1,5196441,4251633,4673299)
+Acinco<-gen_triangular(1,5570937,4558040,5039321)
+```
+
+
+
+a)	Describa cuál es la métrica a evaluar para la toma de decisiones y cuáles son sus componentes por cada proyecto?. (3 puntos)
+
+b)	Infiera todas las distribuciones de probabilidad asociadas a la data histórica existente (5 puntos)
+
+c)	Defina cuál será el procedimiento lógico a seguir para responder cuál es el proyecto más adecuado a implementar en FRUCTUS (2 puntos)
+
+d)	Considerando un número de réplicas que permita obtener un medio ancho de intervalo de confianza igual al 5% de la media, realice el intervalo de confianza de la métrica propuesta y la probabilidad de que cada uno de los proyectos sea aprobado (7 puntos)
+
+e)	Indique cuál debe ser implementado?, Por qué?. Tome como base los resultados obtenidos en d) (2 puntos)
+
+
+
+
+
+
+
+
+
+
+
+
+

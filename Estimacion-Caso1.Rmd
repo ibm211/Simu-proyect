@@ -1,0 +1,186 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(fitdistrplus)
+library(tidyverse)
+library(readxl)
+```
+
+```{r}
+completo<-function(a){
+  m<-a[complete.cases(a)]
+  return(m)
+}
+```
+
+```{r}
+DF1 <- read_excel("DatosEPR1 2024-1.xlsx",sheet = "Data Sistema Tapado")
+```
+
+
+ESTIMAR MANTENIMIENTO
+
+```{r}
+M<-completo(DF1$MANTENIMIENTO)
+hist(M)
+boxplot(M)
+```
+Es muy posible que sea una normal por lo que los valores atipicos en el boxplot esten bien.
+
+```{r}
+plot(M)
+plot(M,type = "l")
+acf(M,lag.max = 80)
+```
+
+
+
+Es aleatorio y autoindependiente.
+
+Ahora si cada podemos decir que cada trimestre es  aleatorio y autoindependiente.
+
+```{r}
+descdist(M)
+```
+Posible distribucion para el comportamiento del mantenimiento:
+norm
+
+```{r}
+fitdist(M,"norm")
+```
+```{r}
+GB_M1N<-gofstat(fitdist(M,"norm"))
+GB_M1N$chisqpvalue
+GB_M1N$kstest
+ks.test(M,pnorm,7488.3096,376.9669)
+```
+
+```{r}
+plot(fitdist(M,"norm"),breaks = 10, col = "skyblue", lwd = 2)
+```
+Segun las pruebas de bondad y los PP y QQ Plot se ajusta bien a la  normal.
+
+
+Ahora podemos modelar El gasto de Mantenimiento Anual como:
+
+CADA TRIMESTRE DE MATENIMIENTO ~ norm(7488.3096,376.9669)
+
+ESTIMANDO LIMPIEZA
+
+```{r}
+L<-DF1$LIMPIEZA
+```
+
+```{r}
+hist(L)
+boxplot(L)
+```
+No hay outlayers y posiblemente sea Uniforme.
+
+```{r}
+plot(L)
+plot(L,type = "l")
+acf(L)
+```
+
+Si es aleatorio y autoindependiente.
+
+```{r}
+descdist(L)
+```
+Segun el grafico de Cullen and Frey es muy probable que sea Uniforme.
+
+```{r}
+fitdist(L,"unif")
+```
+
+```{r}
+GB_L<-gofstat(fitdist(L,"unif"))
+ks.test(L,punif,28.37638	,41.66395	)
+plot(fitdist(L,"unif"),breaks = 10, col = "skyblue", lwd = 2)
+```
+Segun las pruebas de bondad y ajuste la distribucion se ajusta bastante bien a la uniforme.
+
+EVENTO DE VENTA DE MAQUINA.
+
+```{r}
+EV1<-completo(DF1$`Escenario 1`)
+EV2<-completo(DF1$`Escenario 2`)
+EV3<-completo(DF1$`Escenario 3`)
+```
+
+```{r}
+hist(EV1)
+boxplot(EV1)
+hist(EV2)
+boxplot(EV2)
+hist(EV3)
+boxplot(EV3)
+```
+
+
+```{r}
+plot(EV1)
+plot(EV1,type = "l")
+acf(EV1)
+plot(EV2)
+plot(EV2,type = "l")
+acf(EV2)
+plot(EV3)
+plot(EV3,type = "l")
+acf(EV3)
+```
+
+Los 3 eventos son aleatorios y autoindependientes
+
+```{r}
+descdist(EV1,boot = 100)
+descdist(EV2,boot = 100)
+descdist(EV3,boot = 100)
+```
+Los posibles casos obtenidos del grafico Cullen and Frey son:
+
+Evento de Venta 1 es posible que sea una norm o una gamma
+Evento de Venta 2 es posible que sea una unif
+Evento de Venta 3 es posible que sea una norm o gamma
+
+Estimacion de parametros de EV1 y EV3 para gamma sale error
+
+```{r}
+fitdist(EV1,"norm")
+fitdist(EV2,"unif")
+fitdist(EV3,"norm")
+```
+
+```{r}
+GB_EV1<-gofstat(fitdist(EV1,"norm"))
+ks.test(EV1,pnorm,127716.44	,20785.23	)
+GB_EV2<-gofstat(fitdist(EV2,"unif"))
+ks.test(EV2,punif,123081.7,214295.6		)
+GB_EV3<-gofstat(fitdist(EV3,"norm"))
+ks.test(EV3,pnorm,203886.33	,20695.67	)
+```
+Todas las H0 no rechazadas por KSTEST
+
+```{r}
+plot(fitdist(EV1,"norm"),breaks = 10, col = "skyblue", lwd = 2)
+plot(fitdist(EV2,"unif"),breaks = 10, col = "skyblue", lwd = 2)
+plot(fitdist(EV3,"norm"),breaks = 10, col = "skyblue", lwd = 2)
+```
+Se puede concluir:
+
+Evento de Venta 1 ~ norm(127716.44	,20785.23	)
+Evento de Venta 2 ~ unif(123081.7,214295.6)
+Evento de Venta 3 ~ norm(203886.33	,20695.67)
+
+Entonces:
+
+Limpieza ~ unif(28.37638	,41.66395	)
+
+MATENIMIENTO TRIMESTRAL ~ norm(7488.3096,376.9669)
+Evento 1 de Venta Maquina ~ norm(127716.44	,20785.23	)
+Evento 2 de Venta Maquina ~ unif(123081.7,214295.6)
+Evento 3 de Venta Maquina ~ norm(203886.33	,20695.67)
